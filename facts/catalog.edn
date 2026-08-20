@@ -1,0 +1,530 @@
+;; Verified public-register citations for the legal entity archived by this repository.
+;;
+;; Every row is checked live by tools/verify_citations.cljs:
+;;   * GET :cite/url must answer HTTP 2xx
+;;   * :cite/expect-substring must appear in the response body
+;;
+;; A URL that cannot be fetched, or whose body no longer carries the claim, is a
+;; DRIFT and fails the gate. Nothing is recorded here that was not retrieved.
+;;
+;; FOUR independent authorities are cited:
+;;   * GLEIF, the global LEI system
+;;   * ACRA, Singapore's company register, via the State's own open-data publication
+;;   * the Philippine Stock Exchange, where the entity's shares are listed
+;;   * the issuer itself, on the host it controls
+;;
+;; THE HOME REGISTER IS NOT CITED. GLEIF names RA000483 as BOTH the register of
+;; record and the validation authority, and gives the registration number as
+;; 0000016342. RA000483 resolves, in GLEIF's own registry, to:
+;;
+;;     Companies Register
+;;     (Securities and Exchange Commission)
+;;     jurisdiction: Philippines
+;;     website:      www.sec.gov.ph
+;;
+;; That host does not answer this gate. www.sec.gov.ph and sec.gov.ph both return
+;; HTTP 403 with a Cloudflare interstitial titled "Just a moment...". Passing a bot
+;; challenge is out of bounds, so it was not attempted. The Commission's other
+;; surfaces were measured too and none of them is a register lookup: eFAST is a
+;; JavaScript shell behind a login, and eSPARC's "search" takes an application
+;; reference number plus the applicant's e-mail and covers pending applications
+;; only. All of this is recorded under :catalog/unreachable below.
+;;
+;; So the number 0000016342 rests on GLEIF's word alone. No row here claims
+;; otherwise, and no row is written against a Philippine SEC URL.
+;;
+;; A REGISTER OF RECORD IS CITED -- FOR THE CHILD, NOT THE SUBJECT. GLEIF records
+;; a direct child, SMIC SG HOLDINGS PTE. LTD., with Singapore UEN 202219950R.
+;; Singapore publishes ACRA's register as open data and it answers a plain GET.
+;; Asked for that UEN it returns the same name GLEIF gives, byte for byte, plus an
+;; issue date, entity type and registered address GLEIF does not carry. That is a
+;; national register attesting a number GLEIF only quotes -- one level down the
+;; group, and the catalog says so rather than letting it stand in for the parent.
+;;
+;; WHAT THE EXCHANGE AND GLEIF STATE IDENTICALLY. Queried separately:
+;;
+;;   ISIN     GLEIF  "isin":"PHY806761029"     PSE  <td>PHY806761029</td>
+;;   name     GLEIF  SM INVESTMENTS CORPORATION PSE  SM Investments Corporation
+;;   birth    GLEIF  creationDate 1960-01-15    PSE  "incorporated on January 15, 1960"
+;;   address  GLEIF  ONE E-COM CENTER, HARBOR DRIVE, PASAY
+;;            PSE    10th Flr, OneE-com Center, Harbor Drive, ... Pasay City
+;;   child    GLEIF  SM PRIME HOLDINGS, INC.    PSE  "SM Prime Holdings, Inc." (listed as SMPH)
+;;
+;; The ISIN is the strongest of these: it is an identifier neither body invents, and
+;; the two systems were asked for it independently.
+;;
+;; A CONTRADICTION, RECORDED AND NOT RECONCILED. The exchange's company page states
+;; the incorporation date twice and disagrees with itself. Its prose description says
+;; "incorporated on January 15, 1960", which is the day GLEIF gives. Its structured
+;; "Incorporation Date" field on the same page says May 15, 1960. Both strings are
+;; kept as rows (pse-info-incorporated, pse-info-incorp-field) so that neither can be
+;; quietly dropped and so the disagreement stays visible. This catalog does not decide
+;; which is right; it records that one authority publishes both.
+;;
+;; ROW KINDS WERE MEASURED, NOT ASSERTED. Every row was re-checked against a swapped
+;; URL pointing at AYALA CORPORATION (LEI 254900QJ68UH8GKNGI69, PSE cmpy_id 57) --
+;; chosen because it matches on every generic attribute a swap could ride on: also
+;; Philippine, also RA000483, also ACTIVE, also legal form WHGH, also the same
+;; managing LOU, also a PSE-listed conglomerate holding company. Rows that FAILED the
+;; swap are :identity; rows that SURVIVED it are :attribute. The swap moved two rows
+;; off the classification they were drafted with:
+;;
+;;   gleif-ocid-null                drafted :identity, SURVIVED  -> :attribute
+;;                                  (Ayala carries "ocid":null too; it is not specific)
+;;   gleif-no-direct-parent-reason  drafted :attribute, FAILED   -> :identity
+;;                                  (SM files NON_CONSOLIDATING; Ayala files
+;;                                   NATURAL_PERSONS -- the reason really does differ)
+;;
+;; The ACRA rows were swapped against a different Singapore Local Company
+;; (UEN 201224644N), and the issuer rows against www.ayala.com. Final split:
+;; 43 :identity, 22 :attribute, over 65 rows.
+
+{:catalog/subject
+ {:company/legal-name "SM INVESTMENTS CORPORATION"
+  :company/lei "254900YB8UATFP21AF80"
+  :company/home-register "RA000483 -- Companies Register, Securities and Exchange Commission (Philippines)"
+  :company/home-registration-number "0000016342"
+  :company/home-register-cited? false
+  :company/jurisdiction "PH"}
+
+ :catalog/authorities
+ [{:authority/id :gleif
+   :authority/name "Global Legal Entity Identifier Foundation"
+   :authority/role "Issues and maintains the LEI. Names the register of record."}
+  {:authority/id :acra
+   :authority/name "Accounting and Corporate Regulatory Authority (Singapore)"
+   :authority/role "The register of record for the direct child SMIC SG HOLDINGS PTE. LTD. -- NOT for the subject of this repository."
+   :authority/surface "data.gov.sg open-data publication of ACRA's register of corporate entities"}
+  {:authority/id :pse
+   :authority/name "The Philippine Stock Exchange, Inc."
+   :authority/role "The exchange the entity's common shares are listed on. Publishes issuer data it attributes to the SEC Form 17-A."}
+  {:authority/id :issuer
+   :authority/name "SM Investments Corporation (own website)"
+   :authority/role "The entity speaking about itself, on a host it controls."}]
+
+ :catalog/entries
+ [
+  ;; ---- GLEIF: the global LEI system ------------------------------------------
+  {:cite/id "gleif-lei"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"lei\":\"254900YB8UATFP21AF80\""
+   :cite/claim "GLEIF issues LEI 254900YB8UATFP21AF80."}
+  {:cite/id "gleif-legal-name"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"name\":\"SM INVESTMENTS CORPORATION\""
+   :cite/claim "The legal name on that LEI is SM INVESTMENTS CORPORATION."}
+  {:cite/id "gleif-registered-as"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"registeredAs\":\"0000016342\""
+   :cite/claim "GLEIF records Philippine SEC company number 0000016342 as this entity's registration number."}
+  {:cite/id "gleif-validated-as"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"validatedAs\":\"0000016342\""
+   :cite/claim "The same Philippine number is what the LOU validated the record against."}
+  {:cite/id "gleif-creation-date"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"creationDate\":\"1960-01-15T00:00:00Z\""
+   :cite/claim "GLEIF dates the entity's creation to 1960-01-15."}
+  {:cite/id "gleif-initial-registration"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"initialRegistrationDate\":\"2017-12-26T20:29:39Z\""
+   :cite/claim "The LEI itself was first registered on 2017-12-26."}
+  {:cite/id "gleif-qcc"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"qcc\":\"QPHVS20R68\""
+   :cite/claim "GLEIF cross-references QCC identifier QPHVS20R68."}
+  {:cite/id "gleif-spglobal"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"spglobal\":[\"11970279\"]"
+   :cite/claim "GLEIF cross-references S&P Global company id 11970279."}
+  {:cite/id "gleif-legal-address"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"10TH FLOR ONE E-COM CENTER\""
+   :cite/claim "GLEIF's address line for this entity, including its own spelling of FLOR."}
+  {:cite/id "gleif-city-pasay"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"city\":\"PASAY\""
+   :cite/claim "GLEIF places the entity in Pasay."}
+  {:cite/id "gleif-postal"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"postalCode\":\"1300\""
+   :cite/claim "GLEIF's postal code for the registered address."}
+  {:cite/id "gleif-ocid-null"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"ocid\":null"
+   :cite/claim "GLEIF carries NO OpenCorporates id for this entity. Recorded so the absence is checked, not assumed."}
+  {:cite/id "gleif-jurisdiction-ph"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"jurisdiction\":\"PH\""
+   :cite/claim "GLEIF places the entity's jurisdiction in the Philippines."}
+  {:cite/id "gleif-registered-at-ra"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"id\":\"RA000483\""
+   :cite/claim "GLEIF names RA000483 as the register of record and the validation authority."}
+  {:cite/id "gleif-status-active"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"status\":\"ACTIVE\""
+   :cite/claim "GLEIF reports the entity status as ACTIVE."}
+  {:cite/id "gleif-corroboration"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"corroborationLevel\":\"FULLY_CORROBORATED\""
+   :cite/claim "The LEI record is FULLY_CORROBORATED, i.e. checked against the register."}
+  {:cite/id "gleif-managing-lou"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"managingLou\":\"5493001KJTIIGC8Y1R12\""
+   :cite/claim "Bloomberg Finance L.P. is the LOU that maintains this record."}
+  {:cite/id "gleif-legal-form"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80"
+   :cite/expect-substring "\"legalForm\":{\"id\":\"WHGH\""
+   :cite/claim "GLEIF's ELF code for the legal form is WHGH."}
+  {:cite/id "gleif-ra-code"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/registration-authorities/RA000483"
+   :cite/expect-substring "\"code\":\"RA000483\""
+   :cite/claim "RA000483 resolves in GLEIF's own registry of registration authorities."}
+  {:cite/id "gleif-ra-register-name"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/registration-authorities/RA000483"
+   :cite/expect-substring "\"internationalName\":\"Companies Register\""
+   :cite/claim "RA000483 is the Companies Register."}
+  {:cite/id "gleif-ra-organisation"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/registration-authorities/RA000483"
+   :cite/expect-substring "\"internationalOrganizationName\":\"Securities and Exchange Commission\""
+   :cite/claim "The body operating that register is the Securities and Exchange Commission."}
+  {:cite/id "gleif-ra-website"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/registration-authorities/RA000483"
+   :cite/expect-substring "\"website\":\"www.sec.gov.ph\""
+   :cite/claim "GLEIF gives www.sec.gov.ph as that register's website. See :catalog/unreachable -- this host does not answer this gate."}
+  {:cite/id "gleif-ra-country"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/registration-authorities/RA000483"
+   :cite/expect-substring "\"countryCode\":\"PH\""
+   :cite/claim "That register's jurisdiction is the Philippines."}
+  {:cite/id "gleif-isin-ph"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80/isins"
+   :cite/expect-substring "\"isin\":\"PHY806761029\""
+   :cite/claim "GLEIF maps ISIN PHY806761029 to this LEI. This is the tie to the exchange listing."}
+  {:cite/id "gleif-isin-adr"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80/isins"
+   :cite/expect-substring "\"isin\":\"US78455R2058\""
+   :cite/claim "GLEIF also maps a US ADR ISIN to this LEI."}
+  {:cite/id "gleif-isin-adr2"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80/isins"
+   :cite/expect-substring "\"isin\":\"US78455R1068\""
+   :cite/claim "A second US ADR ISIN is mapped to this LEI."}
+  {:cite/id "gleif-child-sg-lei"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80/direct-children"
+   :cite/expect-substring "\"id\":\"254900CQKQDZMZH3G563\""
+   :cite/claim "GLEIF records a direct child with its own LEI."}
+  {:cite/id "gleif-child-sg-name"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80/direct-children"
+   :cite/expect-substring "\"name\":\"SMIC SG HOLDINGS PTE. LTD.\""
+   :cite/claim "That child is SMIC SG HOLDINGS PTE. LTD."}
+  {:cite/id "gleif-child-sg-uen"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80/direct-children"
+   :cite/expect-substring "\"registeredAs\":\"202219950R\""
+   :cite/claim "GLEIF records the Singapore UEN of that child as 202219950R."}
+  {:cite/id "gleif-child-ph-name"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80/direct-children"
+   :cite/expect-substring "\"name\":\"SM PRIME HOLDINGS, INC.\""
+   :cite/claim "GLEIF records a second direct child, SM PRIME HOLDINGS, INC."}
+  {:cite/id "gleif-child-ph-regno"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80/direct-children"
+   :cite/expect-substring "\"registeredAs\":\"AS94000088\""
+   :cite/claim "GLEIF records that child's Philippine registration number as AS94000088."}
+  {:cite/id "gleif-no-direct-parent"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80/direct-parent-reporting-exception"
+   :cite/expect-substring "\"category\":\"DIRECT_ACCOUNTING_CONSOLIDATION_PARENT\""
+   :cite/claim "GLEIF holds a reporting exception in place of a direct parent."}
+  {:cite/id "gleif-no-direct-parent-reason"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80/direct-parent-reporting-exception"
+   :cite/expect-substring "\"reason\":\"NON_CONSOLIDATING\""
+   :cite/claim "The stated reason is NON_CONSOLIDATING -- nobody consolidates this entity."}
+  {:cite/id "gleif-no-ultimate-parent"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80/ultimate-parent-reporting-exception"
+   :cite/expect-substring "\"category\":\"ULTIMATE_ACCOUNTING_CONSOLIDATION_PARENT\""
+   :cite/claim "The same exception is filed at the ultimate-parent level, so this entity is the top of its group."}
+
+  ;; ---- ACRA (Singapore): a register of record that answers --------------------
+  {:cite/id "acra-uen"
+   :cite/authority :acra
+   :cite/row-kind :identity
+   :cite/url "https://data.gov.sg/api/action/datastore_search?resource_id=d_3f960c10fed6145404ca7b821f263b87&q=202219950R"
+   :cite/expect-substring "\"uen\":\"202219950R\""
+   :cite/claim "Singapore's register carries UEN 202219950R -- the same number GLEIF records for the child."}
+  {:cite/id "acra-entity-name"
+   :cite/authority :acra
+   :cite/row-kind :identity
+   :cite/url "https://data.gov.sg/api/action/datastore_search?resource_id=d_3f960c10fed6145404ca7b821f263b87&q=202219950R"
+   :cite/expect-substring "\"entity_name\":\"SMIC SG HOLDINGS PTE. LTD.\""
+   :cite/claim "ACRA's own name for that UEN matches GLEIF's child name exactly."}
+  {:cite/id "acra-issue-date"
+   :cite/authority :acra
+   :cite/row-kind :identity
+   :cite/url "https://data.gov.sg/api/action/datastore_search?resource_id=d_3f960c10fed6145404ca7b821f263b87&q=202219950R"
+   :cite/expect-substring "\"uen_issue_date\":\"2022-06-08\""
+   :cite/claim "ACRA dates the UEN's issue to 2022-06-08."}
+  {:cite/id "acra-street"
+   :cite/authority :acra
+   :cite/row-kind :identity
+   :cite/url "https://data.gov.sg/api/action/datastore_search?resource_id=d_3f960c10fed6145404ca7b821f263b87&q=202219950R"
+   :cite/expect-substring "\"reg_street_name\":\"RAFFLES PLACE\""
+   :cite/claim "ACRA's registered street for that entity."}
+  {:cite/id "acra-postal"
+   :cite/authority :acra
+   :cite/row-kind :identity
+   :cite/url "https://data.gov.sg/api/action/datastore_search?resource_id=d_3f960c10fed6145404ca7b821f263b87&q=202219950R"
+   :cite/expect-substring "\"reg_postal_code\":\"048619\""
+   :cite/claim "ACRA's registered postal code for that entity."}
+  {:cite/id "acra-agency"
+   :cite/authority :acra
+   :cite/row-kind :attribute
+   :cite/url "https://data.gov.sg/api/action/datastore_search?resource_id=d_3f960c10fed6145404ca7b821f263b87&q=202219950R"
+   :cite/expect-substring "\"issuance_agency_desc\":\"ACRA\""
+   :cite/claim "The issuing agency is ACRA, Singapore's Accounting and Corporate Regulatory Authority."}
+  {:cite/id "acra-status"
+   :cite/authority :acra
+   :cite/row-kind :attribute
+   :cite/url "https://data.gov.sg/api/action/datastore_search?resource_id=d_3f960c10fed6145404ca7b821f263b87&q=202219950R"
+   :cite/expect-substring "\"uen_status_desc\":\"Registered\""
+   :cite/claim "ACRA reports that UEN as Registered."}
+  {:cite/id "acra-entity-type"
+   :cite/authority :acra
+   :cite/row-kind :attribute
+   :cite/url "https://data.gov.sg/api/action/datastore_search?resource_id=d_3f960c10fed6145404ca7b821f263b87&q=202219950R"
+   :cite/expect-substring "\"entity_type_desc\":\"Local Company\""
+   :cite/claim "ACRA classifies it as a Local Company."}
+
+  ;; ---- The Philippine Stock Exchange -----------------------------------------
+  {:cite/id "pse-auto-name"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/autoComplete/searchCompanyNameSymbol.ax?term=SM%20Investments"
+   :cite/expect-substring "\"cmpyNm\":\"SM Investments Corporation\""
+   :cite/claim "The exchange's own company index returns SM Investments Corporation."}
+  {:cite/id "pse-auto-symbol"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/autoComplete/searchCompanyNameSymbol.ax?term=SM%20Investments"
+   :cite/expect-substring "\"symbol\":\"SM\""
+   :cite/claim "Its ticker on the Philippine Stock Exchange is SM."}
+  {:cite/id "pse-auto-id"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/autoComplete/searchCompanyNameSymbol.ax?term=SM%20Investments"
+   :cite/expect-substring "\"cmpyId\":\"599\""
+   :cite/claim "The exchange's internal company id is 599."}
+  {:cite/id "pse-child-auto-name"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/autoComplete/searchCompanyNameSymbol.ax?term=SM%20Prime"
+   :cite/expect-substring "\"cmpyNm\":\"SM Prime Holdings, Inc.\""
+   :cite/claim "The exchange separately lists SM Prime Holdings, Inc. -- the child GLEIF names."}
+  {:cite/id "pse-child-auto-symbol"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/autoComplete/searchCompanyNameSymbol.ax?term=SM%20Prime"
+   :cite/expect-substring "\"symbol\":\"SMPH\""
+   :cite/claim "That child trades under SMPH."}
+  {:cite/id "pse-isin"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/companyPage/stockData.do?cmpy_id=599"
+   :cite/expect-substring "<td>PHY806761029</td>"
+   :cite/claim "The exchange prints ISIN PHY806761029 for this listing -- byte-identical to GLEIF's ISIN."}
+  {:cite/id "pse-listing-date"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/companyPage/stockData.do?cmpy_id=599"
+   :cite/expect-substring "<td>Mar 22, 2005</td>"
+   :cite/claim "The exchange dates the listing to 22 March 2005."}
+  {:cite/id "pse-stock-name"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/companyPage/stockData.do?cmpy_id=599"
+   :cite/expect-substring "<p style=\"margin-top:0px;\">SM Investments Corporation</p>"
+   :cite/claim "The exchange's stock-data page names the issuer."}
+  {:cite/id "pse-security-option"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/companyPage/stockData.do?cmpy_id=599"
+   :cite/expect-substring "<option value=\"520\" selected>SM</option>"
+   :cite/claim "The exchange's security id for the SM common share is 520."}
+  {:cite/id "pse-issue-type"
+   :cite/authority :pse
+   :cite/row-kind :attribute
+   :cite/url "https://edge.pse.com.ph/companyPage/stockData.do?cmpy_id=599"
+   :cite/expect-substring "<th>Issue Type</th>"
+   :cite/claim "The listed security is described by issue type on that page."}
+  {:cite/id "pse-info-incorporated"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/companyInformation/form.do?cmpy_id=599"
+   :cite/expect-substring "incorporated on January 15, 1960"
+   :cite/claim "The exchange's company description dates incorporation to 15 January 1960 -- the same day GLEIF gives as creationDate."}
+  {:cite/id "pse-info-incorp-field"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/companyInformation/form.do?cmpy_id=599"
+   :cite/expect-substring "May 15, 1960"
+   :cite/claim "The exchange's STRUCTURED Incorporation Date field says 15 May 1960, contradicting its own description and GLEIF. Recorded, not reconciled."}
+  {:cite/id "pse-info-address"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/companyInformation/form.do?cmpy_id=599"
+   :cite/expect-substring "10th Flr, OneE-com Center, Harbor Drive"
+   :cite/claim "The exchange's business address for the issuer matches GLEIF's registered address."}
+  {:cite/id "pse-info-website"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/companyInformation/form.do?cmpy_id=599"
+   :cite/expect-substring "http://www.sminvestments.com"
+   :cite/claim "The exchange records the issuer's website, matching blueprint.edn."}
+  {:cite/id "pse-info-phone"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/companyInformation/form.do?cmpy_id=599"
+   :cite/expect-substring "(632) 8857-0100"
+   :cite/claim "The exchange's contact telephone number for the issuer."}
+  {:cite/id "pse-info-transfer-agent"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/companyInformation/form.do?cmpy_id=599"
+   :cite/expect-substring "BDO Unibank, Inc. - Trust and Investments Group"
+   :cite/claim "The exchange names BDO Unibank as transfer agent -- BDO being one of the issuer's own banking affiliates."}
+  {:cite/id "pse-info-auditor"
+   :cite/authority :pse
+   :cite/row-kind :attribute
+   :cite/url "https://edge.pse.com.ph/companyInformation/form.do?cmpy_id=599"
+   :cite/expect-substring "SyCip, Gorres, Velayo"
+   :cite/claim "The exchange names the external auditor."}
+  {:cite/id "pse-info-sector"
+   :cite/authority :pse
+   :cite/row-kind :attribute
+   :cite/url "https://edge.pse.com.ph/companyInformation/form.do?cmpy_id=599"
+   :cite/expect-substring "Holding Firms"
+   :cite/claim "The exchange classifies the issuer under Holding Firms."}
+  {:cite/id "pse-info-source-17a"
+   :cite/authority :pse
+   :cite/row-kind :attribute
+   :cite/url "https://edge.pse.com.ph/companyInformation/form.do?cmpy_id=599"
+   :cite/expect-substring "Source: SEC Form 17-A"
+   :cite/claim "The exchange attributes its company description to the issuer's SEC Form 17-A -- the Philippine SEC filing this gate cannot fetch directly."}
+  {:cite/id "pse-info-child-smprime"
+   :cite/authority :pse
+   :cite/row-kind :identity
+   :cite/url "https://edge.pse.com.ph/companyInformation/form.do?cmpy_id=599"
+   :cite/expect-substring "SM Prime Holdings, Inc."
+   :cite/claim "The exchange's description names SM Prime Holdings, Inc. as the property subsidiary -- the same child GLEIF records."}
+  {:cite/id "pse-info-fiscal-year"
+   :cite/authority :pse
+   :cite/row-kind :attribute
+   :cite/url "https://edge.pse.com.ph/companyInformation/form.do?cmpy_id=599"
+   :cite/expect-substring "12/31"
+   :cite/claim "The issuer's fiscal year ends 31 December."}
+
+  ;; ---- The issuer speaking about itself ---------------------------------------
+  {:cite/id "issuer-privacy-policy"
+   :cite/authority :issuer
+   :cite/row-kind :identity
+   :cite/url "https://www.sminvestments.com/privacy-policy/"
+   :cite/expect-substring "Privacy Policy &#8211; SM Investments Corporation"
+   :cite/claim "The Privacy Policy this repository archives is still published at the recorded source URL, and still titles itself as this company's. This row checks that the source EXISTS -- it makes no claim that the archived body or its recorded sha256 is still current."}
+  {:cite/id "issuer-name"
+   :cite/authority :issuer
+   :cite/row-kind :identity
+   :cite/url "https://www.sminvestments.com/"
+   :cite/expect-substring "SM Investments Corporation"
+   :cite/claim "The entity names itself on the host it controls. Measured byte-identical under en-US, ja-JP and tl-PH Accept-Language."}
+  ]
+
+ :catalog/unreachable
+ [{:source "https://www.sec.gov.ph/"
+   :what "The home register itself -- RA000483, the Companies Register of the Philippine Securities and Exchange Commission, which GLEIF names as both register of record and validation authority."
+   :measured "HTTP 403, 5413 bytes, body titled 'Just a moment...' -- a Cloudflare interstitial. Identical result for https://sec.gov.ph/ and for the site's WordPress JSON endpoint."
+   :why-not-worked-around "Getting past it means defeating a bot control, which is out of bounds. The consequence is stated plainly rather than papered over: registration number 0000016342 is carried in this catalog on GLEIF's authority alone."}
+  {:source "https://efast.sec.gov.ph/"
+   :what "SEC eFAST, the Commission's electronic filing and submission tool -- where Philippine annual reports and financial statements are filed."
+   :measured "HTTP 200, 10695 bytes, but the body is 'You need to enable JavaScript to run this app.' The company name appears 0 times."
+   :why-not-worked-around "Nothing to anchor on without executing the page's scripts, and the document side is behind a login in any case."}
+  {:source "https://esparc.sec.gov.ph/application/search"
+   :what "eSPARC, the Commission's registration system -- the only SEC host reachable from here that offers a 'search'."
+   :measured "HTTP 200. The form asks for an application reference number plus the authorized representative's e-mail, and is labelled 'For Regular Applications Only'."
+   :why-not-worked-around "It searches pending applications, not the register of existing companies. It cannot answer whether 0000016342 belongs to this entity, so no row was written against it."}
+  {:source "https://www.sec.gov/cgi-bin/browse-edgar?company=SM+Investments&CIK=&action=getcompany"
+   :what "The United States SEC's company search -- checked because GLEIF maps two US ADR ISINs (US78455R2058, US78455R1068) to this LEI."
+   :measured "HTTP 403 titled 'SEC.gov | Your Request Originates from an Undeclared Automated Tool'. A guessed CIK against data.sec.gov returned 404."
+   :why-not-worked-around "The SEC asks automated clients to declare a contact address in the User-Agent; this gate sends a shared UA that carries none, and the tool is byte-identical across sibling repositories so it is not forked here. Spoofing a browser UA would be evading a bot control. Note this is a refusal, not evidence either way: nothing here establishes whether the entity is an EDGAR registrant, and no row claims it is. The ADR ISINs are cited from GLEIF only."}
+  {:source "https://data.gov.ph/api/3/action/package_search?q=companies"
+   :what "Open Data Philippines -- checked for a published copy of the company register, the route that worked for New York and Singapore in sibling repositories."
+   :measured "HTTP 200, 7364 bytes, but the same Angular application shell is returned for the API path as for the site root. There is no CKAN API behind it."
+   :why-not-worked-around "There is nothing to query. The Philippines does not publish the SEC company register through this portal in a form this gate can fetch."}
+  {:source "https://edge.pse.com.ph/"
+   :what "The PSE EDGE portal root, and its financial-report view for this issuer."
+   :measured "HTTP 200 but the root is a JavaScript shell with 0 occurrences of the company name. The financial_reports_view page DOES serve real figures (FY ended Dec 31, 2025; total assets 1,811,801 Php millions), and the stockData page serves live share counts and an 'As of' timestamp."
+   :why-not-worked-around "Not a refusal -- deliberately not cited. Those values are correct today and will be replaced at the next filing or the next trading day, so a row anchored on them would report DRIFT for a change that is not drift. Only the server-rendered constants on those pages (ISIN, listing date, security id, issuer name) carry rows."}]}
