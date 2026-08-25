@@ -1,11 +1,5 @@
-{:company/gleif-note "registry facts from GLEIF (https://api.gleif.org/api/v1/lei-records/254900YB8UATFP21AF80), retrieved 2026-08-25 by scripts/lei-gleif-ingest.cljs (GET only)"
- :company/jurisdiction "PH"
- :company/legal-address "10TH FLOR ONE E-COM CENTER, HARBOR DRIVE, 1300, PASAY, PH"
- :company/legal-form-elf "WHGH"
- :company/legal-jurisdiction "PH"
- :company/legal-name "SM INVESTMENTS CORPORATION"
+{:company/legal-name "SM INVESTMENTS CORPORATION"
  :company/lei "254900YB8UATFP21AF80"
- :company/lei-status "ISSUED"
- :company/postal-address "10TH FLOR ONE E-COM CENTER, HARBOR DRIVE, 1300, PASAY, PH"
- :company/registration-number "0000016342"
- :company/website "https://www.sminvestments.com/"}
+ :company/jurisdiction "PH"
+ :company/website "https://www.sminvestments.com/"
+}
