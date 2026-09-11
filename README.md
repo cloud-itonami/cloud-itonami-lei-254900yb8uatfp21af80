@@ -21,7 +21,7 @@ catalog's real reach was 27 countries with the United States at 55%.
 this legal entity. Every row is checked against the live web:
 
 ```sh
-nbb tools/verify_citations.cljs facts/catalog.edn --min 60
+nbb tools/verify_citations.cljk facts/catalog.edn --min 60
 ```
 
 Exit codes are three-valued on purpose — *"nothing was checked"* and *"nothing was
